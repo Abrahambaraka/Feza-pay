@@ -1,11 +1,14 @@
 {
   "version": 2,
-  "name": "paycongo-frontend",
+  "name": "paycongo-fullstack",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
   "framework": "vite",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/backend/api/index.ts"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
