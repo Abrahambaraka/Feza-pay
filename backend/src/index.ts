@@ -2,19 +2,19 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { config } from './config';
-import { logger } from './utils/logger';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import { generalLimiter } from './middleware/rateLimiter';
+import { config } from './config/index.js';
+import { logger } from './utils/logger.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { generalLimiter } from './middleware/rateLimiter.js';
 
 // Import routes
-import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/user.routes';
-import kycRoutes from './routes/kyc.routes';
-import issuingRoutes from './routes/issuing.routes';
-import payinRoutes from './routes/payin.routes';
-import webhooksRoutes from './routes/webhooks.routes';
-import { DatabaseService } from './services/database.service';
+import authRoutes from './routes/auth.routes.js';
+import userRoutes from './routes/user.routes.js';
+import kycRoutes from './routes/kyc.routes.js';
+import issuingRoutes from './routes/issuing.routes.js';
+import payinRoutes from './routes/payin.routes.js';
+import webhooksRoutes from './routes/webhooks.routes.js';
+import { DatabaseService } from './services/database.service.js';
 
 // Initialize database
 DatabaseService.initializeTables().catch(err => {
