@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "paycongo-fullstack",
+  "name": "feza-pay",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
