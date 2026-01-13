@@ -16,10 +16,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onStart, onLogin, currentUserName }
       {/* Header / Nav */}
       <div className="flex items-center justify-between px-6 py-5 z-20">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
-            <span className="material-symbols-outlined text-2xl">credit_card</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">PayCongo</span>
+          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Feza Pay</span>
         </div>
         {/* Language Toggle */}
         <div className="flex items-center gap-1 rounded-full bg-slate-200 dark:bg-surface-dark px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-gray-300">
@@ -47,8 +47,8 @@ const HomeView: React.FC<HomeViewProps> = ({ onStart, onLogin, currentUserName }
         <div className="w-full relative mb-8">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-primary/20 blur-[60px] rounded-full -z-10"></div>
           <div className="w-full aspect-square max-h-[340px] rounded-2xl overflow-hidden shadow-xl ring-1 ring-white/10 bg-surface-dark relative flex items-center justify-center">
-            <div 
-              className="w-full h-full bg-cover bg-center" 
+            <div
+              className="w-full h-full bg-cover bg-center"
               style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCjz1nsiZfN3psHdSzg4WYg_X7SlUv6x20TIO1O1Dga0DDEdb2kvvdb5DgER8I8mA7eCaRHwftFmBySKJYo90rronZmNOsoVgYXzhztoocTIi5MCdikOMCjXShQTofjdNRCPMJaTVYGb5Drni4l6vDxvsyVxnQgTm1ypq6-M36fPKdnSTs4mhHsSZ033_uh_mXzVgtcJ8-t3lP9eOkCbTYb1uMSPArI-Fwe80LIcJcyLF2BWTTFSc3igsWnEf-O6JL-kuZbkq9t6_E')" }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-80"></div>
@@ -82,14 +82,14 @@ const HomeView: React.FC<HomeViewProps> = ({ onStart, onLogin, currentUserName }
       {/* Bottom Actions */}
       <div className="w-full px-6 pb-8 pt-2 bg-gradient-to-t from-background-dark to-transparent">
         <div className="flex flex-col gap-3 w-full max-w-[480px] mx-auto">
-          <button 
+          <button
             onClick={onStart}
             className="group relative flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-[#0fd650] text-background-dark text-base font-bold leading-normal tracking-[0.015em] transition-all transform active:scale-[0.98] shadow-lg shadow-primary/25"
           >
             <span className="mr-2">{t('cta_signup')}</span>
             <span className="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
           </button>
-          <button 
+          <button
             onClick={onLogin}
             className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-transparent border border-slate-200 dark:border-white/20 text-slate-900 dark:text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-slate-100 dark:hover:bg-white/5 transition-all active:scale-[0.98]"
           >

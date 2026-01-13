@@ -1,8 +1,8 @@
-Titre: Description détaillée de l’application PayCongo — Cartes Visa virtuelles & Mobile Money
+Titre: Description détaillée de l’application Feza Pay — Cartes Visa virtuelles & Mobile Money
 Date: 2026-01-09 09:31 (locale)
 
 1) Vision et cas d’usage
-- L’application PayCongo permet à un utilisateur de:
+- L’application Feza Pay permet à un utilisateur de:
   - Créer un compte (via Auth Firebase) et se connecter.
   - Compléter un KYC (Know Your Customer) afin d’activer l’émission d’une carte virtuelle.
   - Recevoir une carte Visa virtuelle (mock par défaut; intégration fournisseur possible via backend).

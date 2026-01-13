@@ -1,7 +1,7 @@
 {
-    "name": "paycongo-backend",
+    "name": "feza-pay-backend",
     "version": "1.0.0",
-    "description": "Backend API for PayCongo with Flutterwave integration",
+    "description": "Backend API for Feza Pay with Flutterwave integration",
     "main": "dist/index.js",
     "scripts": {
         "dev": "tsx watch src/index.ts",

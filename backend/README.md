@@ -1,6 +1,6 @@
-# PayCongo Backend API
+# Feza Pay Backend API
 
-Backend API for PayCongo with Flutterwave integration for KYC verification, virtual card issuing, and mobile money payments.
+Backend API for Feza Pay with Flutterwave integration for KYC verification, virtual card issuing, and mobile money payments.
 
 ## 🚀 Quick Start
 
@@ -145,8 +145,8 @@ npm run test:watch
 
 ### Docker
 ```bash
-docker build -t paycongo-backend .
-docker run -p 3000:3000 --env-file .env paycongo-backend
+docker build -t Feza Pay-backend .
+docker run -p 3000:3000 --env-file .env Feza Pay-backend
 ```
 
 ### Firebase Functions (Optional)

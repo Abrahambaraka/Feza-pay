@@ -4,8 +4,8 @@ import { getFinancialAdvice } from '../services/geminiService';
 
 const AppAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([
-    { role: 'model', text: "Bonjour ! Je suis votre assistant PayCongo. Comment puis-je vous aider aujourd'hui ?" }
+  const [messages, setMessages] = useState<{ role: 'user' | 'model', text: string }[]>([
+    { role: 'model', text: "Bonjour ! Je suis votre assistant Feza Pay. Comment puis-je vous aider aujourd'hui ?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -26,14 +26,14 @@ const AppAssistant: React.FC = () => {
 
     const history = messages.slice(-5);
     const response = await getFinancialAdvice(userMsg, history);
-    
+
     setIsTyping(false);
     setMessages(prev => [...prev, { role: 'model', text: response || '' }]);
   };
 
   return (
     <>
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 right-6 w-14 h-14 bg-primary text-background-dark rounded-full shadow-lg flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all"
       >
@@ -49,7 +49,7 @@ const AppAssistant: React.FC = () => {
                   <span className="material-symbols-outlined">smart_toy</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Assistant PayCongo</h3>
+                  <h3 className="font-bold text-lg">Assistant Feza Pay</h3>
                   <p className="text-xs text-primary">En ligne</p>
                 </div>
               </div>
@@ -61,11 +61,10 @@ const AppAssistant: React.FC = () => {
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                    m.role === 'user' 
-                      ? 'bg-primary text-background-dark rounded-tr-none' 
+                  <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${m.role === 'user'
+                      ? 'bg-primary text-background-dark rounded-tr-none'
                       : 'bg-slate-200 dark:bg-background-dark text-slate-800 dark:text-white rounded-tl-none'
-                  }`}>
+                    }`}>
                     <p className="text-sm font-medium leading-relaxed">{m.text}</p>
                   </div>
                 </div>
@@ -83,15 +82,15 @@ const AppAssistant: React.FC = () => {
 
             <div className="p-4 bg-slate-100 dark:bg-background-dark border-t border-white/5">
               <div className="flex gap-2">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Posez votre question..."
                   className="flex-1 bg-white dark:bg-surface-dark border-none rounded-xl px-4 py-3 focus:ring-2 ring-primary transition-all text-sm"
                 />
-                <button 
+                <button
                   onClick={handleSend}
                   className="bg-primary text-background-dark w-12 h-12 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
                 >
