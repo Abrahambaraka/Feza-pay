@@ -10,9 +10,9 @@ app.use(express.json());
 
 app.get('/api/health', async (req, res) => {
     try {
-        // Attempt to import dependencies with full extensions for ESM compatibility
-        const { config } = await import('../backend/src/config/index.ts');
-        const { DatabaseService } = await import('../backend/src/services/database.service.ts');
+        // Attempt to import dependencies with .js extensions for ESM runtime compatibility
+        const { config } = await import('../backend/src/config/index.js');
+        const { DatabaseService } = await import('../backend/src/services/database.service.js');
 
         res.json({
             status: 'ok',
@@ -36,7 +36,7 @@ app.get('/api/health', async (req, res) => {
 // For other routes, we still try the main app but with protection
 app.use('/api/(.*)', async (req, res) => {
     try {
-        const { default: mainApp } = await import('../backend/src/index.ts');
+        const { default: mainApp } = await import('../backend/src/index.js');
         return (mainApp as any)(req, res);
     } catch (error: any) {
         res.status(500).json({ error: 'Main app failed to load', message: error.message });
