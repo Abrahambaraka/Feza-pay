@@ -32,7 +32,7 @@ export async function initiatePayment(
         const charge = await initiateMobileMoneyCharge({
             ...payload,
             email: payload.email || userEmail,
-        });
+        } as any); // Explicit cast to bypass inference issue
 
         // TODO: Store pending transaction in your database
         const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`;

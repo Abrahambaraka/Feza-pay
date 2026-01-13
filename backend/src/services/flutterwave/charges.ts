@@ -44,7 +44,7 @@ export async function initiateMobileMoneyCharge(
         const formattedPhone = formatPhoneNumber(payload.phone_number);
 
         // Generate unique transaction reference
-        const txRef = `paycongo_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        const txRef = `feza_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
         const response = await flutterwaveClient.post<FlutterwaveChargeResponse>('/charges', {
             tx_ref: txRef,
@@ -53,7 +53,7 @@ export async function initiateMobileMoneyCharge(
             payment_type: 'mobilemoneyrwanda', // Flutterwave uses this for francophone mobile money
             phone_number: formattedPhone,
             email: payload.email,
-            fullname: payload.fullname || 'PayCongo User',
+            fullname: payload.fullname || 'Feza Pay User',
             client_ip: '127.0.0.1',
             device_fingerprint: 'N/A',
             meta: {
