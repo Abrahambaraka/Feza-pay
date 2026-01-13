@@ -48,10 +48,8 @@ if (config.nodeEnv === 'development') {
 // Note: On Vercel, routes don't have /api prefix, so we apply to all routes
 app.use(generalLimiter);
 
-// API routes
-const apiRouter = express.Router();
-
-apiRouter.get('/health', (_req: Request, res: Response) => {
+// Health check
+app.get(['/api/health', '/health'], (_req: Request, res: Response) => {
     const missingKeys = [];
     if (!config.flutterwave.publicKey) missingKeys.push('FLW_PUBLIC_KEY');
     if (!config.flutterwave.secretKey) missingKeys.push('FLW_SECRET_KEY');
@@ -69,23 +67,20 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
     });
 });
 
-apiRouter.use('/auth', authRoutes);
-apiRouter.use('/user', userRoutes);
-apiRouter.use('/kyc', kycRoutes);
-apiRouter.use('/issuing', issuingRoutes);
-apiRouter.use('/payin', payinRoutes);
-apiRouter.use('/webhooks', webhooksRoutes);
+// Mount routes at both /api and root to be safe on Vercel
+const routers = [
+    { path: '/auth', router: authRoutes },
+    { path: '/user', router: userRoutes },
+    { path: '/kyc', router: kycRoutes },
+    { path: '/issuing', router: issuingRoutes },
+    { path: '/payin', router: payinRoutes },
+    { path: '/webhooks', router: webhooksRoutes }
+];
 
-// Mount the router under /api
-app.use('/api', apiRouter);
-
-// Fallback for root routes (for local development or direct access)
-app.use('/auth', authRoutes);
-app.use('/user', userRoutes);
-app.use('/kyc', kycRoutes);
-app.use('/issuing', issuingRoutes);
-app.use('/payin', payinRoutes);
-app.use('/webhooks', webhooksRoutes);
+routers.forEach(({ path, router: r }) => {
+    app.use(`/api${path}`, r);
+    app.use(path, r);
+});
 
 app.get('/health', (_req: Request, res: Response) => {
     res.redirect('/api/health');
