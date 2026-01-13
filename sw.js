@@ -25,6 +25,7 @@ self.addEventListener('activate', (event) => {
 // Stratégie: Network-first pour HTML, Cache-first pour assets
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+  if (req.method !== 'GET') return; // Only cache GET requests
   const isHTML = req.headers.get('accept')?.includes('text/html');
 
   if (isHTML) {
