@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { google } from 'googleapis';
-import { config } from '../config';
-import { DatabaseService } from '../services/database.service';
-import { generateToken } from '../utils/jwt.utils';
-import { LoginDTO, CreateUserDTO } from '../models/user.model';
+import { config } from '../config/index.js';
+import { DatabaseService } from '../services/database.service.js';
+import { generateToken } from '../utils/jwt.utils.js';
+import { LoginDTO, CreateUserDTO } from '../models/user.model.js';
 
 const oauth2Client = new google.auth.OAuth2(
     config.google.clientId,
