@@ -48,8 +48,10 @@ if (config.nodeEnv === 'development') {
 // Note: On Vercel, routes don't have /api prefix, so we apply to all routes
 app.use(generalLimiter);
 
-// Health check endpoint
-app.get('/health', (_req: Request, res: Response) => {
+// API routes
+const apiRouter = express.Router();
+
+apiRouter.get('/health', (_req: Request, res: Response) => {
     const missingKeys = [];
     if (!config.flutterwave.publicKey) missingKeys.push('FLW_PUBLIC_KEY');
     if (!config.flutterwave.secretKey) missingKeys.push('FLW_SECRET_KEY');
@@ -67,7 +69,17 @@ app.get('/health', (_req: Request, res: Response) => {
     });
 });
 
-// API routes
+apiRouter.use('/auth', authRoutes);
+apiRouter.use('/user', userRoutes);
+apiRouter.use('/kyc', kycRoutes);
+apiRouter.use('/issuing', issuingRoutes);
+apiRouter.use('/payin', payinRoutes);
+apiRouter.use('/webhooks', webhooksRoutes);
+
+// Mount the router under /api
+app.use('/api', apiRouter);
+
+// Fallback for root routes (for local development or direct access)
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/kyc', kycRoutes);
@@ -75,6 +87,9 @@ app.use('/issuing', issuingRoutes);
 app.use('/payin', payinRoutes);
 app.use('/webhooks', webhooksRoutes);
 
+app.get('/health', (_req: Request, res: Response) => {
+    res.redirect('/api/health');
+});
 
 // 404 handler
 app.use(notFoundHandler);
