@@ -10,8 +10,8 @@ app.use(express.json());
 
 app.get('/api/health', async (req, res) => {
     try {
-        // Attempt to import dependencies inside the handler to catch errors
-        const { config } = await import('../backend/src/config');
+        // Attempt to import dependencies with full paths to avoid ERR_UNSUPPORTED_DIR_IMPORT
+        const { config } = await import('../backend/src/config/index');
         const { DatabaseService } = await import('../backend/src/services/database.service');
 
         res.json({
@@ -28,8 +28,7 @@ app.get('/api/health', async (req, res) => {
         res.status(500).json({
             error: 'Backend initialization failed',
             message: error.message,
-            stack: error.stack,
-            env_keys: Object.keys(process.env).filter(k => k.includes('URL') || k.includes('KEY') || k.includes('SECRET'))
+            stack: error.stack
         });
     }
 });
