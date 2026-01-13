@@ -14,6 +14,12 @@ import kycRoutes from './routes/kyc.routes';
 import issuingRoutes from './routes/issuing.routes';
 import payinRoutes from './routes/payin.routes';
 import webhooksRoutes from './routes/webhooks.routes';
+import { DatabaseService } from './services/database.service';
+
+// Initialize database
+DatabaseService.initializeTables().catch(err => {
+    logger.error('Failed to initialize database tables:', err);
+});
 
 
 const app: Application = express();
