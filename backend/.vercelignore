@@ -1,0 +1,4 @@
+api/*.js
+api/*.d.ts
+api/*.map
+dist/api

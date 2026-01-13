@@ -1,0 +1,216 @@
+Titre: Description détaillée de l’application PayCongo — Cartes Visa virtuelles & Mobile Money
+Date: 2026-01-09 09:31 (locale)
+
+1) Vision et cas d’usage
+- L’application PayCongo permet à un utilisateur de:
+  - Créer un compte (via Auth Firebase) et se connecter.
+  - Compléter un KYC (Know Your Customer) afin d’activer l’émission d’une carte virtuelle.
+  - Recevoir une carte Visa virtuelle (mock par défaut; intégration fournisseur possible via backend).
+  - Recharger le solde (démo) et effectuer des transferts simulés pour illustrer les flux de paiement.
+  - Consulter le tableau de bord, voir ses transactions et les détails de sa carte.
+  - Utiliser l’app comme PWA (installation sur mobile/desktop).
+
+2) Technologies principales
+- Frontend: React + TypeScript (Vite).
+- Style/UI: Tailwind-like classes (utilisation de classes utilitaires), composants React dans /components.
+- Authentification & Base de données: Firebase Authentication + Cloud Firestore.
+- PWA: manifest.webmanifest, sw.js (pré-cache minimal).
+- Intégrations métiers:
+  - KYC: services/kycService.ts (mock + option backend réel via VITE_BACKEND_KYC_URL).
+  - Émission de carte virtuelle: services/issuingService.ts (mock + option backend réel via VITE_BACKEND_ISSUING_URL). Provider prioritaire recommandé: Flutterwave Issuing.
+  - Collecte Mobile Money (pay‑in): services/payinService.ts (mock + option backend réel via VITE_BACKEND_PAYIN_URL) pour initier un paiement M‑Pesa avant l’émission.
+
+3) Architecture et organisation du code
+- Racine du projet:
+  - App.tsx: conteneur principal gérant la navigation d’écran (View), la session utilisateur Firebase, la synchronisation Firestore (cartes, transactions) et les handlers métier (recharge, transfert).
+  - index.tsx: point d’entrée React.
+  - index.html: template Vite.
+  - components/: vues et composants UI (DashboardView, KYCView, SignupView, etc.).
+  - services/: wrappers métiers (kycService.ts, issuingService.ts).
+  - src/firebase.ts: initialisation Firebase (auth, firestore) et helpers (onAuthStateChanged, signOut, etc.).
+  - types.ts: types et énumérations partagés (TransactionType, CardStatus, VirtualCard, etc.).
+  - public/: assets statiques et manifest.
+  - sw.js: service worker.
+  - README.md: instructions de lancement, intégration et déploiement.
+
+4) Flux utilisateurs clés
+4.1. Onboarding & Auth
+- HOME → AUTH (SignupView):
+  - L’utilisateur peut créer un compte ou se connecter (Firebase Auth; Google/Apple si configuré).
+  - Une fois connecté, App.tsx installe des listeners Firestore:
+    - users/{uid}/cards (collection de cartes de l’utilisateur)
+    - users/{uid}/transactions (journal des opérations)
+  - Important: pas de seed automatique de carte par défaut dans Firestore. Pour la démo visuelle, un fallback local (INITIAL_CARDS) est utilisé tant qu’aucune carte n’est présente dans la base.
+
+4.2. KYC → Dépôt initial (Mobile Money) → Émission de carte
+- Depuis AUTH, l’utilisateur passe à l’écran KYC (KYCView):
+  - Sélection du type de document (carte d’électeur ou passeport), simulation d’upload recto/verso.
+  - Au clic « Soumettre les documents »:
+    1) Appelle verifyKyc(payload) dans services/kycService.ts.
+       - Si VITE_BACKEND_KYC_URL est défini, appel POST {KYC_URL}/kyc/verify.
+       - Sinon, mock: approbation automatique si recto fourni.
+    2) Si KYC approuvé, l’app NE crée pas la carte immédiatement. Elle redirige vers InitialDepositView pour initier un dépôt initial via Mobile Money (Vodacom M‑Pesa) avec services/payinService.ts.
+    3) Une fois le paiement confirmé (webhook côté backend en réel; succès direct en mock), l’app appelle createVirtualCard({ transactionId, amount }) dans services/issuingService.ts.
+       - Si VITE_BACKEND_ISSUING_URL est défini, appel POST {ISSUING_URL}/issuing/cards en transmettant la preuve de paiement.
+       - Sinon, mock: génération d’un PAN Visa valide Luhn, CVV, expiry, et balance initiale = amount.
+    4) Persistance Firestore: écrit la carte sous users/{uid}/cards/{cardId}, journalise le « Dépôt initial M‑Pesa » (montant saisi) puis « Activation de carte virtuelle » (montant 0).
+  - En cas d’erreur KYC/paiement/émission: message d’erreur visible dans le footer.
+
+4.3. Tableau de bord, détails et transactions
+- DashboardView: affiche le solde de la première carte, la liste de transactions (ordonnée desc.), et permet de naviguer vers:
+  - CARD_DETAILS (CardDetailsView): détails de la carte, dernières opérations.
+  - TRANSACTIONS_LIST: liste complète.
+  - RECHARGE: tunnel de recharge (démo) qui incrémente le solde.
+  - TRANSFER: tunnel de transfert (démo) qui décrémente le solde et logge une transaction.
+  - PROFILE: profil utilisateur, logout, etc.
+
+5) Modèle de données (types principaux)
+- types.ts:
+  - enum TransactionType: DEPOSIT | WITHDRAWAL | PAYMENT | TRANSFER
+  - enum CardStatus: ACTIVE | FROZEN | CANCELLED
+  - interface Transaction {
+      id: string;
+      type: TransactionType;
+      amount: number;
+      currency: 'USD' | 'CDF';
+      merchant?: string;
+      date: string; // pour l’UI
+      status: 'completed' | 'pending' | 'failed';
+    }
+  - interface VirtualCard {
+      id: string;
+      number: string;    // PAN (mock ou format unifié renvoyé par le backend)
+      expiry: string;    // MM/YY
+      cvv: string;
+      balance: number;
+      label: string;     // nom/étiquette
+      status: CardStatus;
+      type: 'VISA' | 'MASTERCARD';
+    }
+
+6) Services & intégrations
+6.1. KYC (services/kycService.ts)
+- verifyKyc(payload: { documentType; frontImageUrl?; backImageUrl? }): Promise<{ approved; referenceId; riskScore?; reason? }>
+- Comportement:
+  - Valide la présence du recto.
+  - Si VITE_BACKEND_KYC_URL est présent: POST {URL}/kyc/verify.
+  - Sinon: mock → approved: true, referenceId aléatoire, riskScore bas.
+
+6.2. Émission de carte (services/issuingService.ts)
+- createVirtualCard(payload: { scheme; currency; label? }): Promise<IssuedCard>
+- getCardDetails(cardId): Promise<IssuedCard>
+- ISSUING_URL optionnel: VITE_BACKEND_ISSUING_URL.
+- Mapping générique pour compatibilité multi‑fournisseurs:
+  - PAN: number | pan | card_pan | card_number
+  - CVV: cvv | cvc
+  - Expiration: expiry | expiration | (exp_month + exp_year)
+  - Scheme/Brand: scheme | brand
+- Provider prioritaire recommandé: Flutterwave Issuing (couverture Afrique, webhooks, funding, limites). Alternatives: Marqeta, Union54 (via partenaires), Rapyd.
+- En mode mock: génération PAN Visa valide Luhn, CVV, expiry « 12/29 », balance = amount transmis, statut ACTIVE.
+
+6.3. Collecte Mobile Money (services/payinService.ts)
+- initiateMobileMoneyCharge(payload: { amount; currency; phone_number; network; email? }): Promise<{ transactionId; status; message? }>
+- PAYIN_URL optionnel: VITE_BACKEND_PAYIN_URL.
+- En réel: POST {PAYIN_URL}/payin/mobile-money (ex. Flutterwave Charges type mobile_money_franco) puis confirmation via webhook côté backend.
+- En mock: succès simulé avec transactionId aléatoire.
+
+7) Persistance & synchronisation Firestore
+- Collections:
+  - users/{uid}/cards: documents VirtualCard (id = cardId du provider/mock).
+  - users/{uid}/transactions: journal des opérations (type, amount, currency, merchant, status, createdAt serverTimestamp).
+- Listeners en temps réel installés dans App.tsx après auth:
+  - Cards: onSnapshot(collection(db, 'users', uid, 'cards')) → alimente l’état local.
+  - Transactions: onSnapshot(query(..., orderBy('createdAt', 'desc'))) → affichage chrono inverse.
+- Fallback UI: si aucune carte en base, l’app affiche une carte de démonstration (INITIAL_CARDS) pour préserver l’UX en démo.
+
+8) Navigation (Vue actuelle = View)
+- Les vues sont gérées dans App.tsx via un état « view »: 'HOME' | 'AUTH' | 'KYC' | 'INITIAL_DEPOSIT' | 'DASHBOARD' | 'RECHARGE' | 'CARD_DETAILS' | 'TRANSACTIONS_LIST' | 'TRANSFER' | 'PROFILE'.
+- Des callbacks onNavigate/onBack assurent les transitions.
+
+9) Variables d’environnement (.env.local)
+- GEMINI_API_KEY: pour des fonctionnalités IA (si utilisées par l’assistant AppAssistant).
+- VITE_BACKEND_KYC_URL: URL du backend KYC (si non défini → mock local côté front).
+- VITE_BACKEND_ISSUING_URL: URL du backend d’émission (si non défini → mock local côté front).
+- VITE_BACKEND_PAYIN_URL: URL du backend de collecte Mobile Money (si non défini → mock local côté front).
+
+10) Contraintes de sécurité & conformité
+- PAN/CVV: ne pas stocker ni exposer en clair côté front en production.
+  - Recommandation: le backend fait la tokenisation et ne renvoie au front que les métadonnées autorisées (ex. 4 derniers chiffres, alias tokenisé).
+- PCI DSS: si l’app manipule des données de cartes réelles, votre architecture doit éviter la portée PCI côté front. Favoriser des widgets/tokenization providers.
+- Secret d’API: ne jamais exposer FLW_SECRET_KEY (Flutterwave) dans le front. Les appels aux providers se font côté backend, puis le backend renvoie un format unifié au front.
+- Auth & règles Firestore: limiter en lecture/écriture aux ressources de l’utilisateur; envisager des règles de sécurité Firestore adaptées (non incluses dans ce repo).
+
+11) PWA
+- Manifest: manifest.webmanifest (nom, icônes, couleurs, scope).
+- Service Worker sw.js: pré-cache minimal, stratégie network-first pour HTML.
+- Test d’installation: build puis preview; ajout à l’écran d’accueil via le navigateur.
+
+12) Build, exécution et déploiement
+- Lancer en local:
+  1) npm install
+  2) Définir .env.local (au besoin)
+  3) npm run dev (Vite)
+- Production:
+  - Build: npm run build → sortie dans dist/
+  - Preview: npm run preview
+  - Firebase Hosting: npm run deploy (firebase.json pointe sur dist/)
+- CI/CD (si workflow présent): déploiement automatique sur push main et previews pour PR (voir README.md pour secrets GitHub nécessaires).
+
+13) Écrans et composants principaux
+- HomeView: page d’accueil, CTA vers AUTH/DASHBOARD.
+- SignupView: inscription/connexion.
+- KYCView: soumission KYC; en cas de succès, redirection vers le dépôt initial (pas d’émission directe côté KYC).
+- DashboardView: solde, actions rapides (recharge/transfert), aperçus de transactions et cartes.
+- CardDetailsView: détails de la carte virtuelle et historiques liés.
+- TransactionsListView: liste complète des transactions.
+- RechargeView: incrémente le solde (mock) + journalise la transaction.
+- TransferView: décrémente le solde (mock) + journalise la transaction.
+- ProfileView: informations utilisateur, logout.
+- AppAssistant: assistant contextuel (peut tirer parti d’IA si clé GEMINI_API_KEY fournie).
+- InitialDepositView: initie un paiement Mobile Money (Vodacom/Airtel/Orange), puis, en cas de succès, appelle l’émission de la carte et persiste la carte + transactions.
+
+14) Design et UX
+- Modes clair/sombre: gestion simple via classList sur documentElement (isDarkMode dans App.tsx).
+- Composants stylés avec classes utilitaires (teintes primaires, fonds, ombres, arrondis). Icônes via « material-symbols-outlined ».
+- Focalisation mobile-first: mise en page compacte, barres collées, sections collantes (sticky) pour confort d’usage.
+
+15) Limitations actuelles (démo)
+- KYC et émission: en mode mock si variables backend non définies.
+- Affichage carte: PAN/CVV stockés pour démo; en prod, masquer et tokeniser (backend).
+- Recharges et transferts: flux purement démonstratifs n’interagissant pas avec un opérateur mobile money réel.
+- Sécurité Firestore: règles non incluses; à définir pour la production (lecture/écriture restreintes au uid).
+
+16) Roadmap suggérée
+- Intégrer réellement Flutterwave Issuing côté backend (proxy /issuing/cards, /issuing/cards/:id) + webhooks pour synchronisation du statut/limites.
+- Intégrer un provider KYC (Smile Identity/Onfido/Veriff) avec upload sécurisé (URL signées) et vérification documentaire/biométrique.
+- Tokenisation des cartes (PAN alias) et affichage des 4 derniers chiffres uniquement côté front.
+- Support Mobile Money (M‑Pesa/Airtel Money/Orange Money) pour rechargement réel via backend (ex. intégration Flutterwave/Monetbil, etc.).
+- Ajout de limites, gel/dégel de carte, et contrôles (MCC, régions, budgets) si provider le permet.
+- Durcissement sécurité (CSP, SRI, nettoyage des dépendances), logs d’audit et monitoring.
+
+17) Dépannage rapide (troubleshooting)
+- L’app démarre mais pas de carte réelle:
+  - Vérifier que VITE_BACKEND_ISSUING_URL est défini et que le backend répond à POST /issuing/cards.
+  - Sinon, le mode mock génère une carte locale (non persistée côté provider).
+- KYC toujours approuvé en local:
+  - C’est le comportement mock; définir VITE_BACKEND_KYC_URL pour un vrai provider.
+- Transactions non visibles:
+  - Confirmer l’auth utilisateur; vérifier Firestore (droits et structure users/{uid}/transactions) et la présence du champ createdAt (serverTimestamp).
+- Erreur CORS:
+  - Configurer les en-têtes CORS côté backend (origins du front) pour /kyc/verify et /issuing/cards.
+
+18) Références rapides
+- Fichiers clés:
+  - App.tsx
+  - components/KYCView.tsx
+  - components/DashboardView.tsx
+  - components/CardDetailsView.tsx
+  - services/kycService.ts
+  - services/issuingService.ts
+  - services/payinService.ts
+  - src/firebase.ts
+  - types.ts
+  - components/InitialDepositView.tsx
+  - README.md
+
+Cette description couvre l’architecture, les flux fonctionnels, les intégrations, la sécurité et les opérations nécessaires pour comprendre et faire évoluer l’application de manière sûre et rapide.

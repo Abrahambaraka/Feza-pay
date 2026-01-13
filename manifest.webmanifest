@@ -1,0 +1,12 @@
+{
+  "name": "PayCongo",
+  "short_name": "PayCongo",
+  "start_url": "/",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#102216",
+  "background_color": "#f6f8f6",
+  "lang": "fr",
+  "description": "Cartes virtuelles VISA et Mobile Money pour la RDC.",
+  "icons": []
+}

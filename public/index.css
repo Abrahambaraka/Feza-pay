@@ -1,0 +1,9 @@
+/* Fichier CSS statique copié tel quel par Vite dans /index.css
+   Vous pouvez y mettre des styles globaux additionnels si besoin. */
+
+/* Normalisation minimale pour s'assurer que l'app prend toute la hauteur */
+html, body, #root {
+  height: 100%;
+}
+
+/* Police par défaut déjà injectée via Tailwind CDN, cette feuille peut rester légère */
