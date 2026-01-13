@@ -10,6 +10,11 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// Initialize database
+DatabaseService.initializeTables().catch(err => {
+    console.error('Failed to initialize database tables:', err);
+});
+
 app.get('/api/health', async (req, res) => {
     res.json({ status: 'ok', vercel: true });
 });
