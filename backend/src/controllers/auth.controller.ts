@@ -13,22 +13,37 @@ const oauth2Client = new google.auth.OAuth2(
 
 export class AuthController {
     // Initiate Google OAuth flow
-    static initiateGoogleAuth(req: Request, res: Response): void {
-        const scopes = [
-            'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile',
-        ];
+    static initiateGoogleAuth(_req: Request, res: Response): void {
+        try {
+            if (!config.google.clientId || !config.google.clientSecret) {
+                console.error('❌ Google OAuth Error: Missing client ID or secret');
+                res.status(500).json({
+                    success: false,
+                    error: 'Google login configuration is missing'
+                });
+                return;
+            }
 
-        const authUrl = oauth2Client.generateAuthUrl({
-            access_type: 'offline',
-            scope: scopes,
-            prompt: 'consent',
-        });
+            const scopes = [
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile',
+            ];
 
-        res.json({
-            success: true,
-            data: { authUrl },
-        });
+            const authUrl = oauth2Client.generateAuthUrl({
+                access_type: 'offline',
+                scope: scopes,
+                prompt: 'consent',
+            });
+
+            // Redirect directly to Google auth page
+            res.redirect(authUrl);
+        } catch (error: any) {
+            console.error('Google OAuth initiation error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to initiate Google login'
+            });
+        }
     }
 
     // Handle Google OAuth callback
@@ -66,8 +81,8 @@ export class AuthController {
                     const createUserData: CreateUserDTO = {
                         email: googleUser.email,
                         displayName: googleUser.name || googleUser.email.split('@')[0],
-                        googleId: googleUser.id,
-                        photoURL: googleUser.picture,
+                        googleId: googleUser.id ?? undefined,
+                        photoURL: googleUser.picture ?? undefined,
                     };
                     user = await DatabaseService.createUser(createUserData);
                 }
@@ -83,7 +98,11 @@ export class AuthController {
             // Redirect to frontend with token
             res.redirect(`${config.frontendUrl}/auth/callback?token=${token}`);
         } catch (error: any) {
-            console.error('Google OAuth callback error:', error);
+            // Log complet pour debug Vercel
+            console.error('Google OAuth callback error:', error && (error.stack || error.message || error));
+            if (error.response && error.response.data) {
+                console.error('Google OAuth error response data:', error.response.data);
+            }
             res.redirect(`${config.frontendUrl}/?error=auth_failed`);
         }
     }
@@ -139,9 +158,21 @@ export class AuthController {
             });
         } catch (error: any) {
             console.error('Signup error:', error);
+
+            // Provide specific error message for database configuration issues
+            if (error.message && error.message.includes('Database not configured')) {
+                res.status(503).json({
+                    success: false,
+                    error: 'Database service unavailable',
+                    details: 'Please configure the database connection in Vercel environment variables (POSTGRES_URL_NON_POOLING, POSTGRES_URL, or DATABASE_URL)',
+                });
+                return;
+            }
+
             res.status(500).json({
                 success: false,
                 error: 'Failed to create user',
+                details: error.message || 'Unknown error',
             });
         }
     }
@@ -159,12 +190,13 @@ export class AuthController {
                 return;
             }
 
-            // Verify credentials
+            // Verify password
             const user = await DatabaseService.verifyPassword(email, password);
+
             if (!user) {
                 res.status(401).json({
                     success: false,
-                    error: 'Invalid email or password',
+                    error: 'Invalid credentials',
                 });
                 return;
             }
@@ -197,11 +229,11 @@ export class AuthController {
         }
     }
 
-    // Get current user
+    // Get current user info from token
     static async getCurrentUser(req: Request, res: Response): Promise<void> {
         try {
-            const authReq = req as any;
-            const userId = authReq.authUser?.userId;
+            // @ts-ignore - user is added to request by auth middleware
+            const userId = (req as any).authUser?.userId;
 
             if (!userId) {
                 res.status(401).json({
@@ -212,6 +244,7 @@ export class AuthController {
             }
 
             const user = await DatabaseService.findUserById(userId);
+
             if (!user) {
                 res.status(404).json({
                     success: false,
@@ -239,10 +272,11 @@ export class AuthController {
     }
 
     // Logout (client-side token removal, but we can provide endpoint for consistency)
-    static logout(req: Request, res: Response): void {
+    static logout(_req: Request, res: Response): Promise<void> {
         res.json({
             success: true,
             message: 'Logged out successfully',
         });
+        return Promise.resolve();
     }
 }
